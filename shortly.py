@@ -105,8 +105,6 @@ class Shortly(object):
 
     def on_list_url(self, request):
         urls = get_list_urls(self.redis)
-        for u in urls:
-            print(u)
 
         return self.render_template(
             "short_links_list.html",

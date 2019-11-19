@@ -25,6 +25,13 @@ def get_count(redis, short_id):
 
 
 def get_list_urls(redis):
-    return [redis.get(k)
-            for k in redis.keys()
-            if k.decode("utf-8").startswith('url-target')]
+    urls = []
+    last_id = int(redis.get("last-url-id"))
+    for url_num in range(last_id):
+        short_id = base36_encode(url_num+1)
+        tmp = {}
+        tmp["short_id"] = short_id
+        tmp["url"] = redis.get("url-target:" + short_id)
+        tmp["click_count"] = int(redis.get("click-count:" + short_id) or 0)
+        urls.append(tmp)
+    return urls
