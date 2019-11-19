@@ -25,4 +25,6 @@ def get_count(redis, short_id):
 
 
 def get_list_urls(redis):
-    pass
+    return [redis.get(k)
+            for k in redis.keys()
+            if k.decode("utf-8").startswith('url-target')]

@@ -1,0 +1,7 @@
+{% extends "layout.html" %}
+{% block title %}Details about /{{ short_id }}{% endblock %}
+{% block body %}
+{% for url in urls %}
+  <h4><a href="/{{ url }}">/{{ url }}</a></h2>
+{% endfor %}
+{% endblock %}
