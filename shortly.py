@@ -27,6 +27,10 @@ from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
 
+USERNAME = "admin"
+PASSWORD = "123"
+
+
 class Shortly(object):
     def __init__(self, config):
         self.redis = redis.Redis(config["redis_host"], config["redis_port"])
@@ -42,13 +46,24 @@ class Shortly(object):
                 Rule("/create", endpoint="new_url"),
                 Rule("/list", endpoint="list_url"),
                 Rule("/<short_id>", endpoint="follow_short_link"),
-                Rule("/<short_id>_details", endpoint="short_link_details")
+                Rule("/<short_id>_details", endpoint="short_link_details"),
+                Rule("/log_out", endpoint="exit")
             ]
         )
 
     def render_template(self, template_name, **context):
         t = self.jinja_env.get_template(template_name)
         return Response(t.render(context), mimetype="text/html")
+
+    def check_auth(self, username, password):
+        return username == USERNAME and password == PASSWORD
+
+    def auth_required(self,request):
+        return Response(
+            "Please log-in to continue",
+            401,
+            {"WWW-Authenticate": 'Basic realm="login required"'}
+        )
 
     def dispatch_request(self, request):
         adapter = self.url_map.bind_to_environ(request.environ)
@@ -62,8 +77,19 @@ class Shortly(object):
 
     def wsgi_app(self, environ, start_response):
         request = Request(environ)
-        response = self.dispatch_request(request)
+        auth = request.authorization
+        if not auth or not self.check_auth(auth.username, auth.password):
+            response = self.auth_required(request)
+        else:
+            response = self.dispatch_request(request)
         return response(environ, start_response)
+
+    def on_exit(self,request):
+        return Response(
+            "You've successfully log-out",
+            401,
+            {"WWW-Authenticate": 'Basic realm="login required"'}
+        )
 
     def on_home(self, request):
         return self.render_template("homepage.html")
